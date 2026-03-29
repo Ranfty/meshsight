@@ -1,6 +1,6 @@
 # Chunk 01 — Project Scaffolding + Map
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium
 > **Depends on:** Nothing
 > **Estimated time:** ~2 hours

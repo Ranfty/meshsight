@@ -1,0 +1,106 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ── Base palette ─────────────────────────────────────── */
+    --background:         222 47% 6%;      /* #0c0f14 — app background */
+    --foreground:         220 20% 91%;     /* #e2e6ed — primary text */
+
+    /* ── Surface layers (cards, sidebar, panels) ──────────── */
+    --card:               222 30% 10%;     /* #151921 — card / sidebar bg */
+    --card-foreground:    220 20% 91%;
+    --popover:            222 30% 10%;
+    --popover-foreground: 220 20% 91%;
+
+    /* ── Muted (disabled, placeholder, subtle backgrounds) ── */
+    --muted:              222 25% 15%;     /* #1c2230 */
+    --muted-foreground:   220 15% 60%;     /* #8892a4 — secondary text */
+
+    /* ── Accent (primary interactive colour — green) ──────── */
+    --primary:            153 66% 48%;     /* #3ecf8e — buttons, links, active states */
+    --primary-foreground: 222 47% 6%;      /* dark text on green bg */
+
+    /* ── Secondary (subtle interactive — blue-grey) ───────── */
+    --secondary:          222 25% 15%;
+    --secondary-foreground: 220 20% 91%;
+
+    /* ── Borders & rings ──────────────────────────────────── */
+    --border:             222 22% 22%;     /* #2a3142 */
+    --input:              222 22% 22%;
+    --ring:               153 66% 48%;     /* green focus ring */
+
+    /* ── Semantic colours ─────────────────────────────────── */
+    --destructive:        0 72% 51%;       /* #ef4444 — delete, errors, obstructed */
+    --destructive-foreground: 0 0% 100%;
+
+    /* ── Chart / data visualisation colours ────────────────── */
+    --chart-1:            153 66% 48%;     /* green — good signal / clear LOS */
+    --chart-2:            217 71% 53%;     /* #3b82f6 blue — info, secondary data */
+    --chart-3:            35 92% 57%;      /* #f59e42 orange — warning, marginal */
+    --chart-4:            0 72% 51%;       /* #ef4444 red — danger, obstructed */
+    --chart-5:            262 83% 58%;     /* #8b5cf6 purple — Fresnel zone */
+
+    /* ── Sidebar ──────────────────────────────────────────── */
+    --sidebar-background:           222 30% 10%;
+    --sidebar-foreground:           220 20% 91%;
+    --sidebar-primary:              153 66% 48%;
+    --sidebar-primary-foreground:   222 47% 6%;
+    --sidebar-accent:               222 25% 15%;
+    --sidebar-accent-foreground:    220 20% 91%;
+    --sidebar-border:               222 22% 22%;
+    --sidebar-ring:                 153 66% 48%;
+
+    /* ── Component sizing ─────────────────────────────────── */
+    --radius:             0.5rem;
+
+    /* ── Signal strength palette (heatmap + badges) ──────── */
+    --signal-excellent:   153 66% 48%;     /* green  — above -90 dBm */
+    --signal-good:        153 66% 48%;     /* green at 0.7 opacity */
+    --signal-fair:        35 92% 57%;      /* orange — -110 to -90 dBm */
+    --signal-weak:        0 72% 51%;       /* red    — below -110 dBm */
+
+    /* ── Node marker colours (auto-assigned, cycling) ────── */
+    --node-0:             153 66% 48%;     /* green */
+    --node-1:             217 71% 53%;     /* blue */
+    --node-2:             35 92% 57%;      /* orange */
+    --node-3:             262 83% 58%;     /* purple */
+    --node-4:             0 72% 51%;       /* red */
+    --node-5:             180 60% 50%;     /* cyan */
+    --node-6:             330 70% 56%;     /* pink */
+    --node-7:             50 90% 55%;      /* yellow */
+
+    /* ── Map UI ───────────────────────────────────────────── */
+    --map-overlay-bg:     222 47% 6% / 0.85;
+    --map-grid-line:      222 22% 22% / 0.3;
+
+    /* ── Sidebar dimensions ───────────────────────────────── */
+    --sidebar-width:      360px;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  code,
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+  }
+}
