@@ -38,7 +38,7 @@ export default function App() {
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="absolute top-3 left-3 z-[1000] flex items-center justify-center w-9 h-9 rounded-lg bg-[hsl(var(--map-overlay-bg))] backdrop-blur-sm border border-border text-foreground hover:text-primary transition-colors duration-150"
+            className="absolute top-3 left-3 z-[1000] flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--map-overlay-bg)] backdrop-blur-sm border border-border text-foreground hover:text-primary transition-colors duration-150"
             aria-label="Open sidebar"
           >
             <Menu size={16} />

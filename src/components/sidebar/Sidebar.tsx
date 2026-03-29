@@ -1,44 +1,108 @@
-import { Radio, Settings2, Link } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { useStore } from '@/store/useStore';
-import { cn } from '@/lib/utils';
+import { useCallback } from "react";
+import { Radio, Settings2, Link, Crosshair } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Toggle } from "@/components/ui/toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useStore } from "@/store/useStore";
+import { cn } from "@/lib/utils";
+import NodeList from "./NodeList";
+import NodeEditor from "./NodeEditor";
 
 // ── Sidebar content (shared between desktop and mobile) ────────────────────
 
 function SidebarContent() {
+  const placeMode = useStore((s) => s.placeMode);
+  const setPlaceMode = useStore((s) => s.setPlaceMode);
+  const nodes = useStore((s) => s.nodes);
+  const selectedNodeId = useStore((s) => s.selectedNodeId);
+
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4">
-        <h1 className="text-lg font-bold text-foreground">MeshSight</h1>
-        <p className="text-[13px] text-muted-foreground mt-0.5">RF Coverage Planner</p>
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
+        <div>
+          <h1 className="text-lg font-bold text-foreground">MeshSight</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            RF Coverage Planner
+          </p>
+        </div>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Toggle
+              pressed={placeMode}
+              onPressedChange={setPlaceMode}
+              size="lg"
+              variant="outline"
+              aria-label="Toggle place mode"
+              className="h-8 w-8"
+            >
+              <Crosshair size={16} />
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent side="left" sideOffset={8}>
+            {placeMode ? "Place mode active" : "Place node"}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <Separator />
 
       <Tabs defaultValue="nodes" className="flex flex-col flex-1 min-h-0">
         <TabsList className="mx-4 mt-3 grid grid-cols-3">
-          <TabsTrigger value="nodes" className="flex items-center gap-1.5 text-[13px]">
+          <TabsTrigger
+            value="nodes"
+            className="flex items-center gap-1.5 text-[13px]"
+          >
             <Radio size={14} />
             Nodes
           </TabsTrigger>
-          <TabsTrigger value="config" className="flex items-center gap-1.5 text-[13px]">
+          <TabsTrigger
+            value="config"
+            className="flex items-center gap-1.5 text-[13px]"
+          >
             <Settings2 size={14} />
             Config
           </TabsTrigger>
-          <TabsTrigger value="link" className="flex items-center gap-1.5 text-[13px]">
+          <TabsTrigger
+            value="link"
+            className="flex items-center gap-1.5 text-[13px]"
+          >
             <Link size={14} />
             Link
           </TabsTrigger>
         </TabsList>
 
         <ScrollArea className="flex-1 mt-3">
-          <TabsContent value="nodes" className="px-4 pb-4 mt-0">
-            <p className="text-[13px] text-muted-foreground">
-              No nodes placed yet. Enable place mode and click the map to add nodes.
-            </p>
+          <TabsContent
+            value="nodes"
+            className="px-4 pb-4 mt-0 flex flex-col gap-3"
+          >
+            {nodes.length === 0 && (
+              <p className="text-[13px] text-muted-foreground">
+                No nodes placed yet. Use the{" "}
+                <span className="inline-flex items-center gap-0.5 text-foreground">
+                  <Crosshair size={12} className="inline" />
+                </span>{" "}
+                button above to start placing nodes.
+              </p>
+            )}
+            <NodeList />
+            {selectedNode && (
+              <>
+                <Separator />
+                <NodeEditor node={selectedNode} />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="config" className="px-4 pb-4 mt-0">
@@ -64,11 +128,11 @@ function DesktopSidebar({ open }: { open: boolean }) {
   return (
     <div
       className={cn(
-        'flex-shrink-0 bg-card border-r border-border overflow-hidden transition-all duration-200',
-        open ? 'w-[var(--sidebar-width)]' : 'w-0'
+        "flex-shrink-0 bg-card border-r border-border overflow-hidden transition-all duration-200",
+        open ? "w-[360px]" : "w-0",
       )}
     >
-      <div className="h-full w-[var(--sidebar-width)]">
+      <div className="h-full w-[360px]">
         <SidebarContent />
       </div>
     </div>
@@ -77,10 +141,16 @@ function DesktopSidebar({ open }: { open: boolean }) {
 
 // ── Mobile sidebar (Sheet) ──────────────────────────────────────────────────
 
-function MobileSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+function MobileSidebar({
+  open,
+  onToggle,
+}: {
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
     <Sheet open={open} onOpenChange={onToggle}>
-      <SheetContent side="left" className="p-0 w-[var(--sidebar-width)] bg-card border-border">
+      <SheetContent side="left" className="p-0 w-[360px] bg-card border-border">
         <SidebarContent />
       </SheetContent>
     </Sheet>
@@ -93,7 +163,10 @@ export default function Sidebar({ isMobile }: { isMobile: boolean }) {
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
 
-  const toggle = () => setSidebarOpen(!sidebarOpen);
+  const toggle = useCallback(
+    () => setSidebarOpen(!sidebarOpen),
+    [setSidebarOpen, sidebarOpen],
+  );
 
   if (isMobile) {
     return <MobileSidebar open={sidebarOpen} onToggle={toggle} />;

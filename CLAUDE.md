@@ -99,99 +99,42 @@ npx shadcn@latest add sheet
 
 MeshSight uses a dark, technical aesthetic inspired by RF engineering tools and military C2 displays. The palette is cool and muted with a single vibrant accent colour (green) used for interactive elements and positive states.
 
-### Design tokens (CSS custom properties)
+### Colour system — shadcn preset (oklch)
 
-These are defined in `src/index.css` and consumed by both Tailwind and shadcn. The values use the HSL format required by shadcn/ui.
+The project uses the **shadcn Tailwind preset** (`shadcn/tailwind.css`). Colour variables use `oklch()` format, **not** HSL. Do not introduce HSL-format CSS variables or `hsl(var(--*))` wrapper calls — these are invalid with oklch values.
 
-```css
-@layer base {
-  :root {
-    /* ── Base palette ─────────────────────────────────────── */
-    --background:         222 47% 6%;      /* #0c0f14 — app background */
-    --foreground:         220 20% 91%;     /* #e2e6ed — primary text */
+Dark mode is applied via `class="dark"` on `<body>` in `index.html`. All shadcn dark-mode colours live in the `.dark {}` block in `src/index.css`.
 
-    /* ── Surface layers (cards, sidebar, panels) ──────────── */
-    --card:               222 30% 10%;     /* #151921 — card / sidebar bg */
-    --card-foreground:    220 20% 91%;
-    --popover:            222 30% 10%;
-    --popover-foreground: 220 20% 91%;
+**Key dark-mode colours (from `.dark {}` in `index.css`):**
 
-    /* ── Muted (disabled, placeholder, subtle backgrounds) ── */
-    --muted:              222 25% 15%;     /* #1c2230 */
-    --muted-foreground:   220 15% 60%;     /* #8892a4 — secondary text */
+| Token | oklch | Role |
+|---|---|---|
+| `--background` | `oklch(0.145 0 0)` | App background |
+| `--foreground` | `oklch(0.985 0 0)` | Primary text |
+| `--card` | `oklch(0.205 0 0)` | Sidebar / card surface |
+| `--popover` | `oklch(0.30 0 0)` | Floating UI (dropdowns, popovers) — intentionally **lighter** than card |
+| `--primary` | `oklch(0.432 0.095 166.913)` | Green accent |
+| `--muted` | `oklch(0.269 0 0)` | Subtle backgrounds |
+| `--border` | `oklch(1 0 0 / 10%)` | Borders |
 
-    /* ── Accent (primary interactive colour — green) ──────── */
-    --primary:            153 66% 48%;     /* #3ecf8e — buttons, links, active states */
-    --primary-foreground: 222 47% 6%;      /* dark text on green bg */
+To customise the theme: edit the `:root {}` (light) or `.dark {}` (dark) blocks in `src/index.css`. Do not hardcode colour values in components — always use Tailwind semantic classes (`bg-card`, `text-muted-foreground`, etc.).
 
-    /* ── Secondary (subtle interactive — blue-grey) ───────── */
-    --secondary:          222 25% 15%;
-    --secondary-foreground: 220 20% 91%;
+### MeshSight-specific tokens
 
-    /* ── Borders & rings ──────────────────────────────────── */
-    --border:             222 22% 22%;     /* #2a3142 */
-    --input:              222 22% 22%;
-    --ring:               153 66% 48%;     /* green focus ring */
-
-    /* ── Semantic colours ─────────────────────────────────── */
-    --destructive:        0 72% 51%;       /* #ef4444 — delete, errors, obstructed */
-    --destructive-foreground: 0 0% 100%;
-
-    /* ── Chart / data visualisation colours ────────────────── */
-    --chart-1:            153 66% 48%;     /* green — good signal / clear LOS */
-    --chart-2:            217 71% 53%;     /* #3b82f6 blue — info, secondary data */
-    --chart-3:            35 92% 57%;      /* #f59e42 orange — warning, marginal */
-    --chart-4:            0 72% 51%;       /* #ef4444 red — danger, obstructed */
-    --chart-5:            262 83% 58%;     /* #8b5cf6 purple — Fresnel zone */
-
-    /* ── Sidebar ──────────────────────────────────────────── */
-    --sidebar-background:           222 30% 10%;
-    --sidebar-foreground:           220 20% 91%;
-    --sidebar-primary:              153 66% 48%;
-    --sidebar-primary-foreground:   222 47% 6%;
-    --sidebar-accent:               222 25% 15%;
-    --sidebar-accent-foreground:    220 20% 91%;
-    --sidebar-border:               222 22% 22%;
-    --sidebar-ring:                 153 66% 48%;
-
-    /* ── Component sizing ─────────────────────────────────── */
-    --radius:             0.5rem;
-  }
-}
-```
-
-### Extended application tokens
-
-Beyond shadcn's required variables, define these for MeshSight-specific UI:
+These live in `:root {}` in `index.css` and work in both themes:
 
 ```css
-@layer base {
-  :root {
-    /* ── Signal strength palette (heatmap + badges) ──────── */
-    --signal-excellent:   153 66% 48%;     /* green  — above -90 dBm */
-    --signal-good:        153 66% 48%;     /* green at 0.7 opacity */
-    --signal-fair:        35 92% 57%;      /* orange — -110 to -90 dBm */
-    --signal-weak:        0 72% 51%;       /* red    — below -110 dBm */
-
-    /* ── Node marker colours (auto-assigned, cycling) ────── */
-    --node-0:             153 66% 48%;     /* green */
-    --node-1:             217 71% 53%;     /* blue */
-    --node-2:             35 92% 57%;      /* orange */
-    --node-3:             262 83% 58%;     /* purple */
-    --node-4:             0 72% 51%;       /* red */
-    --node-5:             180 60% 50%;     /* cyan */
-    --node-6:             330 70% 56%;     /* pink */
-    --node-7:             50 90% 55%;      /* yellow */
-
-    /* ── Map UI ───────────────────────────────────────────── */
-    --map-overlay-bg:     222 47% 6% / 0.85;   /* semi-transparent panels over map */
-    --map-grid-line:      222 22% 22% / 0.3;
-
-    /* ── Sidebar dimensions ───────────────────────────────── */
-    --sidebar-width:      360px;
-  }
-}
+--sidebar-width: 360px;
+--map-overlay-bg: oklch(0.145 0 0 / 0.85);  /* semi-transparent panel over map */
 ```
+
+Use as `w-[360px]` (hardcoded, not `var()`) for the sidebar width, and `bg-[var(--map-overlay-bg)]` for map overlay panels.
+
+### Node marker colours
+
+Node colours are hardcoded hex constants in `src/lib/nodeUtils.ts` (`NODE_COLORS` array). Hex is used because the heatmap canvas renderer requires RGB components. The 8 colours cycle through green → blue → orange → purple → red → cyan → pink → yellow.
+
+Do **not** define `--node-*` CSS variables — they served no purpose once we moved to oklch and the hex constants are the source of truth.
 
 ### Typography
 

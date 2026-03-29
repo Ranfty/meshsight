@@ -4,6 +4,7 @@ import type { MeshNode, LoRaConfig } from '@/types';
 
 interface AppState {
   nodes: MeshNode[];
+  nextNodeIndex: number;           // monotonically incrementing — survives deletions
   selectedNodeId: string | null;
   loraConfig: LoRaConfig;
   mapCenter: { lat: number; lng: number };
@@ -11,6 +12,7 @@ interface AppState {
   sidebarOpen: boolean;
   placeMode: boolean;
   linkAnalysisMode: boolean;
+  flyTarget: { lat: number; lng: number; zoom?: number } | null;
 }
 
 interface AppActions {
@@ -24,12 +26,15 @@ interface AppActions {
   setSidebarOpen: (open: boolean) => void;
   setPlaceMode: (active: boolean) => void;
   setLinkAnalysisMode: (active: boolean) => void;
+  flyTo: (lat: number, lng: number, zoom?: number) => void;
+  clearFlyTarget: () => void;
 }
 
-type Store = AppState & AppActions;
+interface Store extends AppState, AppActions {}
 
 const initialState: AppState = {
   nodes: [],
+  nextNodeIndex: 0,
   selectedNodeId: null,
   loraConfig: {
     frequencyMhz: 868.0,
@@ -44,6 +49,7 @@ const initialState: AppState = {
   sidebarOpen: true,
   placeMode: false,
   linkAnalysisMode: false,
+  flyTarget: null,
 };
 
 export const useStore = create<Store>()(
@@ -52,7 +58,10 @@ export const useStore = create<Store>()(
       ...initialState,
 
       addNode: (node) =>
-        set((state) => ({ nodes: [...state.nodes, node] })),
+        set((state) => ({
+          nodes: [...state.nodes, node],
+          nextNodeIndex: state.nextNodeIndex + 1,
+        })),
 
       updateNode: (id, updates) =>
         set((state) => ({
@@ -79,12 +88,17 @@ export const useStore = create<Store>()(
       setPlaceMode: (active) => set({ placeMode: active }),
 
       setLinkAnalysisMode: (active) => set({ linkAnalysisMode: active }),
+
+      flyTo: (lat, lng, zoom) => set({ flyTarget: { lat, lng, zoom } }),
+
+      clearFlyTarget: () => set({ flyTarget: null }),
     }),
     {
       name: 'meshsight-store',
-      // Only persist these keys; placeMode and linkAnalysisMode reset on reload
+      // Only persist these keys; placeMode, linkAnalysisMode, and flyTarget reset on reload
       partialize: (state) => ({
         nodes: state.nodes,
+        nextNodeIndex: state.nextNodeIndex,
         loraConfig: state.loraConfig,
         mapCenter: state.mapCenter,
         mapZoom: state.mapZoom,
