@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { MeshNode, LoRaConfig } from '@/types';
+import type { MeshNode, LoRaConfig, CoverageResult } from '@/types';
 
 interface AppState {
   nodes: MeshNode[];
@@ -13,6 +13,11 @@ interface AppState {
   placeMode: boolean;
   linkAnalysisMode: boolean;
   flyTarget: { lat: number; lng: number; zoom?: number } | null;
+  // Coverage state (not persisted)
+  coverageResults: Record<string, CoverageResult>; // nodeId → result
+  coverageProgress: Record<string, number>;         // nodeId → 0-100 while calculating
+  // Visibility (persisted)
+  nodeVisibility: Record<string, boolean>;          // nodeId → false = hidden
 }
 
 interface AppActions {
@@ -28,6 +33,10 @@ interface AppActions {
   setLinkAnalysisMode: (active: boolean) => void;
   flyTo: (lat: number, lng: number, zoom?: number) => void;
   clearFlyTarget: () => void;
+  setCoverageResult: (result: CoverageResult) => void;
+  setCoverageProgress: (nodeId: string, percent: number) => void;
+  clearCoverageProgress: (nodeId: string) => void;
+  setNodeVisibility: (nodeId: string, visible: boolean) => void;
 }
 
 interface Store extends AppState, AppActions {}
@@ -50,6 +59,9 @@ const initialState: AppState = {
   placeMode: false,
   linkAnalysisMode: false,
   flyTarget: null,
+  coverageResults: {},
+  coverageProgress: {},
+  nodeVisibility: {},
 };
 
 export const useStore = create<Store>()(
@@ -69,10 +81,21 @@ export const useStore = create<Store>()(
         })),
 
       removeNode: (id) =>
-        set((state) => ({
-          nodes: state.nodes.filter((n) => n.id !== id),
-          selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
-        })),
+        set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [id]: _cr, ...restCoverage } = state.coverageResults;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [id]: _cp, ...restProgress } = state.coverageProgress;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [id]: _cv, ...restVisibility } = state.nodeVisibility;
+          return {
+            nodes: state.nodes.filter((n) => n.id !== id),
+            selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
+            coverageResults: restCoverage,
+            coverageProgress: restProgress,
+            nodeVisibility: restVisibility,
+          };
+        }),
 
       selectNode: (id) => set({ selectedNodeId: id }),
 
@@ -92,10 +115,32 @@ export const useStore = create<Store>()(
       flyTo: (lat, lng, zoom) => set({ flyTarget: { lat, lng, zoom } }),
 
       clearFlyTarget: () => set({ flyTarget: null }),
+
+      setCoverageResult: (result) =>
+        set((state) => ({
+          coverageResults: { ...state.coverageResults, [result.nodeId]: result },
+        })),
+
+      setCoverageProgress: (nodeId, percent) =>
+        set((state) => ({
+          coverageProgress: { ...state.coverageProgress, [nodeId]: percent },
+        })),
+
+      clearCoverageProgress: (nodeId) =>
+        set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [nodeId]: _, ...rest } = state.coverageProgress;
+          return { coverageProgress: rest };
+        }),
+
+      setNodeVisibility: (nodeId, visible) =>
+        set((state) => ({
+          nodeVisibility: { ...state.nodeVisibility, [nodeId]: visible },
+        })),
     }),
     {
       name: 'meshsight-store',
-      // Only persist these keys; placeMode, linkAnalysisMode, and flyTarget reset on reload
+      // Only persist these keys; transient state resets on reload
       partialize: (state) => ({
         nodes: state.nodes,
         nextNodeIndex: state.nextNodeIndex,
@@ -103,6 +148,7 @@ export const useStore = create<Store>()(
         mapCenter: state.mapCenter,
         mapZoom: state.mapZoom,
         sidebarOpen: state.sidebarOpen,
+        nodeVisibility: state.nodeVisibility,
       }),
     }
   )

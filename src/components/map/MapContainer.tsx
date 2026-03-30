@@ -3,7 +3,9 @@ import { MapContainer as LeafletMapContainer, TileLayer, ZoomControl, useMapEven
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { createNode } from '@/lib/nodeUtils';
+import { useCoverageManager } from '@/hooks/useCoverageManager';
 import NodeMarker from './NodeMarker';
+import CoverageLayer, { CoveragePaneInit } from './CoverageLayer';
 import type L from 'leaflet';
 
 // ── Tile layer definitions ──────────────────────────────────────────────────
@@ -29,8 +31,7 @@ const TILE_LAYERS = {
 type TileLayerKey = keyof typeof TILE_LAYERS;
 
 // ── Map event handler — persists position + handles place mode clicks ─────────
-// Uses getState() inside event callbacks to avoid stale closures — event handlers
-// are registered once by react-leaflet and must not close over reactive values.
+// Uses getState() inside event callbacks to avoid stale closures.
 
 function MapEventHandler() {
   useMapEvents({
@@ -40,7 +41,6 @@ function MapEventHandler() {
       const node = createNode(e.latlng.lat, e.latlng.lng, nextNodeIndex);
       addNode(node);
       selectNode(node.id);
-      // place mode stays active — click toggle or "cancel" to exit
     },
     moveend(e) {
       const map = e.target;
@@ -65,7 +65,7 @@ function FlyToHandler() {
       map.flyTo(
         [flyTarget.lat, flyTarget.lng],
         flyTarget.zoom ?? map.getZoom(),
-        { duration: 0.6 }
+        { duration: 0.6 },
       );
       clearFlyTarget();
     }
@@ -74,7 +74,7 @@ function FlyToHandler() {
   return null;
 }
 
-// ── Sidebar resize handler — invalidates map size after CSS transition ────────
+// ── Sidebar resize handler ────────────────────────────────────────────────────
 
 function SidebarResizeHandler({ sidebarOpen }: { sidebarOpen: boolean }) {
   const map = useMap();
@@ -87,6 +87,75 @@ function SidebarResizeHandler({ sidebarOpen }: { sidebarOpen: boolean }) {
   }, [map, sidebarOpen]);
 
   return null;
+}
+
+// ── Coverage orchestrator — manages worker lifecycle ─────────────────────────
+
+function CoverageOrchestrator() {
+  useCoverageManager();
+  return null;
+}
+
+// ── Coverage overlays — one ImageOverlay per node with a result ──────────────
+
+function CoverageLayers() {
+  const nodes = useStore((s) => s.nodes);
+  const coverageResults = useStore((s) => s.coverageResults);
+  const nodeVisibility = useStore((s) => s.nodeVisibility);
+  const rxSensitivityDbm = useStore((s) => s.loraConfig.rxSensitivityDbm);
+
+  return (
+    <>
+      {nodes.map((node) => {
+        const result = coverageResults[node.id];
+        if (!result) return null;
+        const visible = nodeVisibility[node.id] !== false;
+        return (
+          <CoverageLayer
+            key={node.id}
+            result={result}
+            nodeColor={node.color}
+            rxSensitivityDbm={rxSensitivityDbm}
+            visible={visible}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+// ── Node markers renderer ───────────────────────────────────────────────────
+
+function NodeMarkers() {
+  const nodes = useStore((s) => s.nodes);
+  const selectedNodeId = useStore((s) => s.selectedNodeId);
+  const coverageProgress = useStore((s) => s.coverageProgress);
+  const selectNode = useStore((s) => s.selectNode);
+  const updateNode = useStore((s) => s.updateNode);
+
+  const handleSelect = useCallback((id: string) => {
+    selectNode(id);
+  }, [selectNode]);
+
+  const handleDragEnd = useCallback((id: string, latlng: L.LatLng) => {
+    updateNode(id, { lat: latlng.lat, lng: latlng.lng });
+  }, [updateNode]);
+
+  return (
+    <>
+      {nodes.map((node) => (
+        <NodeMarker
+          key={node.id}
+          node={node}
+          isSelected={node.id === selectedNodeId}
+          isCalculating={node.id in coverageProgress}
+          progress={coverageProgress[node.id] ?? 0}
+          onSelect={handleSelect}
+          onDragEnd={handleDragEnd}
+        />
+      ))}
+    </>
+  );
 }
 
 // ── Tile layer switcher control ─────────────────────────────────────────────
@@ -109,7 +178,7 @@ function TileSwitcher({
               'text-[11px] font-mono px-2 py-1 rounded transition-colors duration-150 text-left',
               activeLayer === key
                 ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             )}
           >
             {TILE_LAYERS[key].label}
@@ -120,34 +189,53 @@ function TileSwitcher({
   );
 }
 
-// ── Node markers renderer ───────────────────────────────────────────────────
+// ── Signal strength legend ──────────────────────────────────────────────────
 
-function NodeMarkers() {
+function SignalLegend() {
   const nodes = useStore((s) => s.nodes);
   const selectedNodeId = useStore((s) => s.selectedNodeId);
-  const selectNode = useStore((s) => s.selectNode);
-  const updateNode = useStore((s) => s.updateNode);
+  const rxSensitivityDbm = useStore((s) => s.loraConfig.rxSensitivityDbm);
 
-  const handleSelect = useCallback((id: string) => {
-    selectNode(id);
-  }, [selectNode]);
+  if (nodes.length === 0) return null;
 
-  const handleDragEnd = useCallback((id: string, latlng: L.LatLng) => {
-    updateNode(id, { lat: latlng.lat, lng: latlng.lng });
-  }, [updateNode]);
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? nodes[0];
+  const swatchColor = selectedNode.color;
+  const s = rxSensitivityDbm;
+
+  const tiers = [
+    { label: 'Excellent', range: `> ${s + 30} dBm`,          alpha: 180 },
+    { label: 'Good',      range: `${s + 20}–${s + 30} dBm`,  alpha: 130 },
+    { label: 'Fair',      range: `${s + 10}–${s + 20} dBm`,  alpha: 90  },
+    { label: 'Edge',      range: `${s}–${s + 10} dBm`,        alpha: 50  },
+  ];
 
   return (
-    <>
-      {nodes.map((node) => (
-        <NodeMarker
-          key={node.id}
-          node={node}
-          isSelected={node.id === selectedNodeId}
-          onSelect={handleSelect}
-          onDragEnd={handleDragEnd}
-        />
-      ))}
-    </>
+    <div className="absolute bottom-3 left-3 z-[1000] pointer-events-none">
+      <div className="rounded-lg bg-[var(--map-overlay-bg)] backdrop-blur-sm border border-border p-3 flex flex-col gap-1.5">
+        <p className="font-mono text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+          Signal
+        </p>
+        {tiers.map((tier) => (
+          <div key={tier.label} className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: swatchColor, opacity: tier.alpha / 255 }}
+            />
+            <div className="flex flex-col leading-tight">
+              <span className="font-mono text-[10px] font-medium text-foreground">
+                {tier.label}
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {tier.range}
+              </span>
+            </div>
+          </div>
+        ))}
+        <p className="font-mono text-[10px] text-muted-foreground/50 mt-0.5 leading-tight">
+          Predicted
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -158,8 +246,6 @@ export default function MapView() {
   const placeMode = useStore((s) => s.placeMode);
   const [activeLayer, setActiveLayer] = useState<TileLayerKey>('dark');
 
-  // center and zoom are INITIAL values only (Leaflet ignores prop changes after mount).
-  // Use the flyTo store action for programmatic navigation.
   const { mapCenter, mapZoom } = useStore.getState();
   const initialCenter = useRef<[number, number]>([mapCenter.lat, mapCenter.lng]);
   const initialZoom = useRef(mapZoom);
@@ -179,10 +265,14 @@ export default function MapView() {
         <MapEventHandler />
         <FlyToHandler />
         <SidebarResizeHandler sidebarOpen={sidebarOpen} />
+        <CoveragePaneInit />
+        <CoverageOrchestrator />
+        <CoverageLayers />
         <NodeMarkers />
       </LeafletMapContainer>
 
       <TileSwitcher activeLayer={activeLayer} onChange={setActiveLayer} />
+      <SignalLegend />
     </div>
   );
 }

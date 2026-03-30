@@ -10,10 +10,10 @@ import type {
 } from '../types';
 
 interface CoverageCallbacks {
-  onProgress?: (nodeId: string, percent: number) => void;
+  onProgress?: (id: string, percent: number) => void;
   onCoverageResult?: (result: CoverageResult) => void;
   onProfileResult?: (result: ElevationProfile) => void;
-  onError?: (message: string) => void;
+  onError?: (id: string, message: string) => void;
 }
 
 export function useCoverageWorker(callbacks: CoverageCallbacks) {
@@ -42,13 +42,13 @@ export function useCoverageWorker(callbacks: CoverageCallbacks) {
           cbs.onProfileResult?.(msg.result);
           break;
         case 'ERROR':
-          cbs.onError?.(msg.message);
+          cbs.onError?.(msg.id, msg.message);
           break;
       }
     };
 
     worker.onerror = (error) => {
-      callbacksRef.current.onError?.(`Worker error: ${error.message}`);
+      callbacksRef.current.onError?.('onerror', `Worker error: ${error.message}`);
     };
 
     workerRef.current = worker;

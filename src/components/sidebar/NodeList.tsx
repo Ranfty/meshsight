@@ -1,4 +1,4 @@
-import { Trash2, MapPin } from "lucide-react";
+import { Eye, EyeOff, Trash2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils";
 export default function NodeList() {
   const nodes = useStore((s) => s.nodes);
   const selectedNodeId = useStore((s) => s.selectedNodeId);
+  const nodeVisibility = useStore((s) => s.nodeVisibility);
   const selectNode = useStore((s) => s.selectNode);
   const removeNode = useStore((s) => s.removeNode);
   const flyTo = useStore((s) => s.flyTo);
+  const setNodeVisibility = useStore((s) => s.setNodeVisibility);
 
   if (nodes.length === 0) return null;
 
@@ -23,6 +25,7 @@ export default function NodeList() {
     <div className="flex flex-col gap-1.5 mt-0.5">
       {nodes.map((node) => {
         const isSelected = node.id === selectedNodeId;
+        const isVisible = nodeVisibility[node.id] !== false;
         return (
           <Card
             key={node.id}
@@ -31,15 +34,15 @@ export default function NodeList() {
               flyTo(node.lat, node.lng);
             }}
             className={cn(
-              // override Card's flex-col + py-6 + gap-6 defaults
               "flex-row items-center gap-2.5 p-2.5 cursor-pointer",
               "hover:bg-muted/60 transition-colors duration-150",
               isSelected
                 ? "border-primary border-l-[3px] bg-primary/5"
                 : "border-border",
+              !isVisible && "opacity-50",
             )}
           >
-            {/* Colour dot — dynamic user colour requires inline style */}
+            {/* Colour dot */}
             <div
               className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
               style={{ backgroundColor: node.color }}
@@ -67,6 +70,27 @@ export default function NodeList() {
             >
               {node.role}
             </Badge>
+
+            {/* Visibility toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 flex-shrink-0 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNodeVisibility(node.id, !isVisible);
+                  }}
+                  aria-label={isVisible ? `Hide ${node.name}` : `Show ${node.name}`}
+                >
+                  {isVisible ? <Eye size={13} /> : <EyeOff size={13} />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                {isVisible ? "Hide" : "Show"} {node.name}
+              </TooltipContent>
+            </Tooltip>
 
             {/* Delete */}
             <Tooltip>
