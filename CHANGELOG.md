@@ -1,3 +1,15 @@
+# [0.3.0](https://github.com/Ranfty/meshsight/compare/v0.2.1...v0.3.0) (2026-03-30)
+
+
+### Bug Fixes
+
+* Do not auto navigate after config change ([78f4228](https://github.com/Ranfty/meshsight/commit/78f4228fb45b22c48cb155ea92bcaf477b5b4da3))
+
+
+### Features
+
+* Add sidebar footer with repo link ([571bc34](https://github.com/Ranfty/meshsight/commit/571bc346a6fb75ae1a6f44790240ab6acabbb52a))
+
 ## [0.2.1](https://github.com/Ranfty/meshsight/compare/v0.2.0...v0.2.1) (2026-03-30)
 
 
