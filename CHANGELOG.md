@@ -1,3 +1,10 @@
+## [0.1.1](https://github.com/Ranfty/meshsight/compare/v0.1.0...v0.1.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* human readable distance in link chart ([f86ffe2](https://github.com/Ranfty/meshsight/commit/f86ffe27aba688a112419408c0c0825216aae156))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
