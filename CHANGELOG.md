@@ -6,22 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-### Added
-
-- (Nothing yet)
-
-### Changed
-
-- (Nothing yet)
-
-### Fixed
-
-- (Nothing yet)
-
-### Removed
-
-- (Nothing yet)
-
 ## [0.1.0] - 2026-03-30
 
 ### Added
@@ -50,6 +34,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - GitHub Pages deployment via GitHub Actions
 - Comprehensive engine unit tests
 - TypeScript strict mode throughout
-
-[Unreleased]: https://github.com/Ranfty/meshsight/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Ranfty/meshsight/releases/tag/v0.1.0
