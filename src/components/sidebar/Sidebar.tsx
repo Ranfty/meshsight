@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Radio, Settings2, Link, Crosshair } from "lucide-react";
+import iconSvg from "/icon.svg";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,7 +51,7 @@ function SidebarContent() {
       {/* Header */}
       <div className="px-4 pt-3 pb-3 flex items-center justify-between gap-2">
         <div className="flex flex-row gap-2">
-          <img src="/icon.svg" className="h-8 w-8" alt="MeshSight" />
+          <img src={iconSvg} className="h-8 w-8" alt="MeshSight" />
           <div>
             <h1 className="font-bold text-lg leading-tight">MeshSight</h1>
             <p className="text-xs text-muted-foreground font-mono tracking-wider">
