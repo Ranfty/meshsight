@@ -21,6 +21,24 @@ interface ChartPoint {
   clearance?: number;
 }
 
+/** Returns evenly-spaced, human-friendly tick values for the distance axis. */
+function niceXTicks(maxKm: number): number[] {
+  const candidates = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
+  const targetCount = 6;
+  const rawStep = maxKm / targetCount;
+  const step = candidates.find((s) => s >= rawStep) ?? 200;
+  const ticks: number[] = [];
+  for (let t = 0; t <= maxKm + step * 0.001; t = parseFloat((t + step).toFixed(10))) {
+    ticks.push(parseFloat(t.toFixed(6)));
+    if (ticks.length > 20) break; // safety
+  }
+  return ticks;
+}
+
+function formatXTick(v: number): string {
+  return v % 1 === 0 ? v.toFixed(0) : v.toFixed(1);
+}
+
 function computeChartData(
   profile: ElevationProfile,
   txHeightM: number,
@@ -126,6 +144,9 @@ export default function ElevationProfileChart({
   const data = computeChartData(profile, txHeightM, rxHeightM, frequencyMhz);
   if (data.length === 0) return null;
 
+  const maxKm = data[data.length - 1].distanceKm;
+  const xTicks = niceXTicks(maxKm);
+
   return (
     <ResponsiveContainer width="100%" height={220}>
       <AreaChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 8 }}>
@@ -136,10 +157,13 @@ export default function ElevationProfileChart({
         />
         <XAxis
           dataKey="distanceKm"
+          type="number"
+          domain={[0, maxKm]}
+          ticks={xTicks}
           tick={CHART_FONTS.tick}
           tickLine={{ stroke: CHART_COLORS.grid }}
           axisLine={{ stroke: CHART_COLORS.grid }}
-          tickFormatter={(v: number) => v.toFixed(1)}
+          tickFormatter={formatXTick}
           label={{ value: 'km', position: 'insideBottomRight', offset: -4, ...CHART_FONTS.label }}
         />
         <YAxis
