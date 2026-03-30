@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { MeshNode, LoRaConfig, CoverageResult } from '@/types';
+import type { MeshNode, LoRaConfig, CoverageResult, ElevationProfile } from '@/types';
 
 interface AppState {
   nodes: MeshNode[];
@@ -18,6 +18,11 @@ interface AppState {
   coverageProgress: Record<string, number>;         // nodeId → 0-100 while calculating
   // Visibility (persisted)
   nodeVisibility: Record<string, boolean>;          // nodeId → false = hidden
+  // Link analysis (not persisted)
+  linkEndpoints: [string | null, string | null];    // [txNodeId, rxNodeId]
+  linkProfile: ElevationProfile | null;
+  linkProfileCalculating: boolean;
+  activeTab: 'nodes' | 'config' | 'link';
 }
 
 interface AppActions {
@@ -37,6 +42,10 @@ interface AppActions {
   setCoverageProgress: (nodeId: string, percent: number) => void;
   clearCoverageProgress: (nodeId: string) => void;
   setNodeVisibility: (nodeId: string, visible: boolean) => void;
+  setLinkEndpoints: (endpoints: [string | null, string | null]) => void;
+  setLinkProfile: (profile: ElevationProfile | null) => void;
+  setLinkProfileCalculating: (v: boolean) => void;
+  setActiveTab: (tab: 'nodes' | 'config' | 'link') => void;
 }
 
 interface Store extends AppState, AppActions {}
@@ -62,6 +71,10 @@ const initialState: AppState = {
   coverageResults: {},
   coverageProgress: {},
   nodeVisibility: {},
+  linkEndpoints: [null, null],
+  linkProfile: null,
+  linkProfileCalculating: false,
+  activeTab: 'nodes',
 };
 
 export const useStore = create<Store>()(
@@ -88,12 +101,18 @@ export const useStore = create<Store>()(
           const { [id]: _cp, ...restProgress } = state.coverageProgress;
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [id]: _cv, ...restVisibility } = state.nodeVisibility;
+          const isEndpoint =
+            state.linkEndpoints[0] === id || state.linkEndpoints[1] === id;
+          const newTx = state.linkEndpoints[0] === id ? null : state.linkEndpoints[0];
+          const newRx = state.linkEndpoints[1] === id ? null : state.linkEndpoints[1];
           return {
             nodes: state.nodes.filter((n) => n.id !== id),
             selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
             coverageResults: restCoverage,
             coverageProgress: restProgress,
             nodeVisibility: restVisibility,
+            linkEndpoints: [newTx, newRx] as [string | null, string | null],
+            linkProfile: isEndpoint ? null : state.linkProfile,
           };
         }),
 
@@ -108,9 +127,31 @@ export const useStore = create<Store>()(
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
-      setPlaceMode: (active) => set({ placeMode: active }),
+      setPlaceMode: (active) =>
+        set((state) => ({
+          placeMode: active,
+          // Mutually exclusive with link analysis mode
+          ...(active && state.linkAnalysisMode
+            ? {
+                linkAnalysisMode: false,
+                linkEndpoints: [null, null] as [null, null],
+                linkProfile: null,
+                linkProfileCalculating: false,
+              }
+            : {}),
+        })),
 
-      setLinkAnalysisMode: (active) => set({ linkAnalysisMode: active }),
+      setLinkAnalysisMode: (active) =>
+        set(
+          active
+            ? { linkAnalysisMode: true, placeMode: false }
+            : {
+                linkAnalysisMode: false,
+                linkEndpoints: [null, null] as [null, null],
+                linkProfile: null,
+                linkProfileCalculating: false,
+              },
+        ),
 
       flyTo: (lat, lng, zoom) => set({ flyTarget: { lat, lng, zoom } }),
 
@@ -137,6 +178,14 @@ export const useStore = create<Store>()(
         set((state) => ({
           nodeVisibility: { ...state.nodeVisibility, [nodeId]: visible },
         })),
+
+      setLinkEndpoints: (endpoints) => set({ linkEndpoints: endpoints }),
+
+      setLinkProfile: (profile) => set({ linkProfile: profile }),
+
+      setLinkProfileCalculating: (v) => set({ linkProfileCalculating: v }),
+
+      setActiveTab: (tab) => set({ activeTab: tab }),
     }),
     {
       name: 'meshsight-store',

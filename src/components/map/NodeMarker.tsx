@@ -8,6 +8,7 @@ interface NodeMarkerProps {
   isSelected: boolean;
   isCalculating: boolean;
   progress: number; // 0–100
+  linkEndpointRole: 'tx' | 'rx' | null;
   onSelect: (id: string) => void;
   onDragEnd: (id: string, latlng: L.LatLng) => void;
 }
@@ -17,17 +18,19 @@ export default function NodeMarker({
   isSelected,
   isCalculating,
   progress,
+  linkEndpointRole,
   onSelect,
   onDragEnd,
 }: NodeMarkerProps) {
   const markerRef = useRef<L.Marker>(null);
 
   const icon = useMemo(() => {
-    const size = isSelected ? 28 : 22;
+    const size = isSelected || linkEndpointRole !== null ? 28 : 22;
     const border = isSelected ? '3px solid white' : '2px solid rgba(255,255,255,0.5)';
     const pulseStyle = isCalculating
       ? 'animation: leaflet-marker-pulse 1.5s ease-in-out infinite;'
       : '';
+
     const progressBadge =
       isCalculating && progress > 0
         ? `<div style="
@@ -47,9 +50,24 @@ export default function NodeMarker({
           ">${progress}%</div>`
         : '';
 
+    // Endpoint ring: green for TX, blue for RX
+    const ringColor = linkEndpointRole === 'tx' ? '#3ecf8e' : '#60a5fa';
+    const ringHtml = linkEndpointRole
+      ? `<div style="
+          position: absolute;
+          top: -5px; left: -5px;
+          width: ${size + 10}px; height: ${size + 10}px;
+          border-radius: 50%;
+          border: 2px solid ${ringColor};
+          opacity: 0.85;
+          pointer-events: none;
+        "></div>`
+      : '';
+
     return L.divIcon({
       className: '',
       html: `<div style="position: relative; width: ${size}px; height: ${size}px; overflow: visible;">
+        ${ringHtml}
         <div style="
           width: ${size}px;
           height: ${size}px;
@@ -73,7 +91,7 @@ export default function NodeMarker({
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
     });
-  }, [node.color, node.name, isSelected, isCalculating, progress]);
+  }, [node.color, node.name, isSelected, isCalculating, progress, linkEndpointRole]);
 
   const eventHandlers = useMemo(
     () => ({

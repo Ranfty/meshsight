@@ -1,6 +1,6 @@
 # Chunk 08 — Link Analysis + LoRa Config Panel
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium
 > **Depends on:** Chunks 04, 05, 07
 > **Estimated time:** ~3 hours

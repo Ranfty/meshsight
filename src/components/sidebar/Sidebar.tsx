@@ -14,16 +14,36 @@ import { useStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";
 import NodeList from "./NodeList";
 import NodeEditor from "./NodeEditor";
+import LoRaConfigPanel from "./LoRaConfigPanel";
+import LinkAnalysis from "./LinkAnalysis";
 
 // ── Sidebar content (shared between desktop and mobile) ────────────────────
 
 function SidebarContent() {
   const placeMode = useStore((s) => s.placeMode);
   const setPlaceMode = useStore((s) => s.setPlaceMode);
+  const linkAnalysisMode = useStore((s) => s.linkAnalysisMode);
+  const setLinkAnalysisMode = useStore((s) => s.setLinkAnalysisMode);
+  const activeTab = useStore((s) => s.activeTab);
+  const setActiveTab = useStore((s) => s.setActiveTab);
   const nodes = useStore((s) => s.nodes);
   const selectedNodeId = useStore((s) => s.selectedNodeId);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+
+  const handlePlaceModeChange = useCallback(
+    (active: boolean) => {
+      setPlaceMode(active);
+    },
+    [setPlaceMode],
+  );
+
+  const handleLinkModeChange = useCallback(
+    (active: boolean) => {
+      setLinkAnalysisMode(active);
+    },
+    [setLinkAnalysisMode],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -36,28 +56,52 @@ function SidebarContent() {
           </p>
         </div>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              pressed={placeMode}
-              onPressedChange={setPlaceMode}
-              size="lg"
-              variant="outline"
-              aria-label="Toggle place mode"
-              className="h-8 w-8"
-            >
-              <Crosshair size={16} />
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent side="left" sideOffset={8}>
-            {placeMode ? "Place mode active" : "Place node"}
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={linkAnalysisMode}
+                onPressedChange={handleLinkModeChange}
+                size="lg"
+                variant="outline"
+                aria-label="Toggle link analysis mode"
+                className="h-8 w-8"
+              >
+                <Link size={16} />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent side="left" sideOffset={8}>
+              {linkAnalysisMode ? "Link analysis active" : "Link analysis"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={placeMode}
+                onPressedChange={handlePlaceModeChange}
+                size="lg"
+                variant="outline"
+                aria-label="Toggle place mode"
+                className="h-8 w-8"
+              >
+                <Crosshair size={16} />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent side="left" sideOffset={8}>
+              {placeMode ? "Place mode active" : "Place node"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       <Separator />
 
-      <Tabs defaultValue="nodes" className="flex flex-col flex-1 min-h-0">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        className="flex flex-col flex-1 min-h-0"
+      >
         <TabsList className="mx-4 mt-3 grid grid-cols-3">
           <TabsTrigger
             value="nodes"
@@ -106,15 +150,11 @@ function SidebarContent() {
           </TabsContent>
 
           <TabsContent value="config" className="px-4 pb-4 mt-0">
-            <p className="text-[13px] text-muted-foreground">
-              LoRa configuration will appear here.
-            </p>
+            <LoRaConfigPanel />
           </TabsContent>
 
           <TabsContent value="link" className="px-4 pb-4 mt-0">
-            <p className="text-[13px] text-muted-foreground">
-              Select two nodes on the map to analyse the link between them.
-            </p>
+            <LinkAnalysis />
           </TabsContent>
         </ScrollArea>
       </Tabs>

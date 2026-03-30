@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MapContainer as LeafletMapContainer, TileLayer, ZoomControl, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer as LeafletMapContainer, TileLayer, ZoomControl, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { createNode } from '@/lib/nodeUtils';
 import { useCoverageManager } from '@/hooks/useCoverageManager';
+import { useLinkProfileManager } from '@/hooks/useLinkProfileManager';
 import NodeMarker from './NodeMarker';
 import CoverageLayer, { CoveragePaneInit } from './CoverageLayer';
 import type L from 'leaflet';
@@ -89,11 +90,41 @@ function SidebarResizeHandler({ sidebarOpen }: { sidebarOpen: boolean }) {
   return null;
 }
 
-// ── Coverage orchestrator — manages worker lifecycle ─────────────────────────
+// ── Orchestrators — manages worker lifecycle ──────────────────────────────────
 
 function CoverageOrchestrator() {
   useCoverageManager();
   return null;
+}
+
+function LinkProfileOrchestrator() {
+  useLinkProfileManager();
+  return null;
+}
+
+// ── Dashed polyline between link analysis endpoints ───────────────────────────
+
+function LinkPolyline() {
+  const nodes = useStore((s) => s.nodes);
+  const linkEndpoints = useStore((s) => s.linkEndpoints);
+  const linkAnalysisMode = useStore((s) => s.linkAnalysisMode);
+
+  const [txId, rxId] = linkEndpoints;
+  if (!linkAnalysisMode || !txId || !rxId) return null;
+
+  const txNode = nodes.find((n) => n.id === txId);
+  const rxNode = nodes.find((n) => n.id === rxId);
+  if (!txNode || !rxNode) return null;
+
+  return (
+    <Polyline
+      positions={[
+        [txNode.lat, txNode.lng],
+        [rxNode.lat, rxNode.lng],
+      ]}
+      pathOptions={{ color: '#8892a4', dashArray: '8 6', weight: 2, opacity: 0.8 }}
+    />
+  );
 }
 
 // ── Coverage overlays — one ImageOverlay per node with a result ──────────────
@@ -130,30 +161,64 @@ function NodeMarkers() {
   const nodes = useStore((s) => s.nodes);
   const selectedNodeId = useStore((s) => s.selectedNodeId);
   const coverageProgress = useStore((s) => s.coverageProgress);
+  const linkAnalysisMode = useStore((s) => s.linkAnalysisMode);
+  const linkEndpoints = useStore((s) => s.linkEndpoints);
   const selectNode = useStore((s) => s.selectNode);
+  const setLinkEndpoints = useStore((s) => s.setLinkEndpoints);
   const updateNode = useStore((s) => s.updateNode);
 
-  const handleSelect = useCallback((id: string) => {
-    selectNode(id);
-  }, [selectNode]);
+  const handleSelect = useCallback(
+    (id: string) => {
+      const { linkAnalysisMode: mode, linkEndpoints: endpoints } = useStore.getState();
+      if (mode) {
+        const [txId, rxId] = endpoints;
+        if (id === txId) {
+          // Deselect TX — clear both
+          setLinkEndpoints([null, null]);
+        } else if (id === rxId) {
+          // Deselect RX — keep TX
+          setLinkEndpoints([txId, null]);
+        } else if (txId === null) {
+          // No TX yet — set as TX
+          setLinkEndpoints([id, null]);
+        } else {
+          // TX is set — set/replace RX
+          setLinkEndpoints([txId, id]);
+        }
+      } else {
+        selectNode(id);
+      }
+    },
+    [selectNode, setLinkEndpoints],
+  );
 
-  const handleDragEnd = useCallback((id: string, latlng: L.LatLng) => {
-    updateNode(id, { lat: latlng.lat, lng: latlng.lng });
-  }, [updateNode]);
+  const handleDragEnd = useCallback(
+    (id: string, latlng: L.LatLng) => {
+      updateNode(id, { lat: latlng.lat, lng: latlng.lng });
+    },
+    [updateNode],
+  );
+
+  const [txId, rxId] = linkEndpoints;
 
   return (
     <>
-      {nodes.map((node) => (
-        <NodeMarker
-          key={node.id}
-          node={node}
-          isSelected={node.id === selectedNodeId}
-          isCalculating={node.id in coverageProgress}
-          progress={coverageProgress[node.id] ?? 0}
-          onSelect={handleSelect}
-          onDragEnd={handleDragEnd}
-        />
-      ))}
+      {nodes.map((node) => {
+        const role =
+          node.id === txId ? 'tx' : node.id === rxId ? 'rx' : null;
+        return (
+          <NodeMarker
+            key={node.id}
+            node={node}
+            isSelected={!linkAnalysisMode && node.id === selectedNodeId}
+            isCalculating={node.id in coverageProgress}
+            progress={coverageProgress[node.id] ?? 0}
+            linkEndpointRole={role}
+            onSelect={handleSelect}
+            onDragEnd={handleDragEnd}
+          />
+        );
+      })}
     </>
   );
 }
@@ -267,7 +332,9 @@ export default function MapView() {
         <SidebarResizeHandler sidebarOpen={sidebarOpen} />
         <CoveragePaneInit />
         <CoverageOrchestrator />
+        <LinkProfileOrchestrator />
         <CoverageLayers />
+        <LinkPolyline />
         <NodeMarkers />
       </LeafletMapContainer>
 
