@@ -1,6 +1,11 @@
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, TriangleAlert, Loader2 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { calculateLinkBudget } from '@/engine/linkbudget';
+import {
+  calculateLinkBudget,
+  MARGINAL_MARGIN_FLOOR_DB,
+  MARGINAL_FRESNEL_FLOOR_M,
+  MARGINAL_DISTANCE_FLOOR_KM,
+} from '@/engine/linkbudget';
 import ElevationProfileChart from '@/components/map/ElevationProfileChart';
 import type { ElevationProfile, MeshNode, LoRaConfig } from '@/types';
 
@@ -115,7 +120,43 @@ export default function LinkAnalysis() {
 
   const summary = computeLinkSummary(linkProfile, txNode, rxNode, loraConfig);
   const { budget, totalDistanceKm, minClearanceM, minClearanceDistKm } = summary;
-  const linkViable = budget.marginDb > 0;
+  const { linkStatus, marginDb, fadeMarginDb } = budget;
+
+  // Collect marginal warning strings
+  const marginalWarnings: string[] = [];
+  if (linkStatus === 'marginal') {
+    if (marginDb < fadeMarginDb + MARGINAL_MARGIN_FLOOR_DB) {
+      const headroom = marginDb - fadeMarginDb;
+      marginalWarnings.push(
+        `Link margin only ${headroom > 0 ? '+' : ''}${headroom.toFixed(1)} dB — less than ${MARGINAL_MARGIN_FLOOR_DB} dB recommended`,
+      );
+    }
+    if (minClearanceM !== null && minClearanceM < MARGINAL_FRESNEL_FLOOR_M) {
+      marginalWarnings.push(
+        `Fresnel zone buried ${minClearanceM.toFixed(1)} m at ${minClearanceDistKm.toFixed(1)} km — single knife-edge model may underestimate loss`,
+      );
+    }
+    if (totalDistanceKm > MARGINAL_DISTANCE_FLOOR_KM) {
+      marginalWarnings.push(
+        `Path is ${totalDistanceKm.toFixed(1)} km — approaching reliable range limit for this preset`,
+      );
+    }
+  }
+
+  const statusCell =
+    linkStatus === 'viable' ? (
+      <span className="flex items-center gap-1 text-[13px] font-medium" style={{ color: '#3ecf8e' }}>
+        <CheckCircle2 size={13} /> Viable
+      </span>
+    ) : linkStatus === 'marginal' ? (
+      <span className="flex items-center gap-1 text-[13px] font-medium text-warning">
+        <TriangleAlert size={13} /> Marginal
+      </span>
+    ) : (
+      <span className="flex items-center gap-1 text-[13px] font-medium" style={{ color: '#ef4444' }}>
+        <XCircle size={13} /> No link
+      </span>
+    );
 
   const metrics: Array<{ label: string; value: React.ReactNode }> = [
     {
@@ -124,15 +165,7 @@ export default function LinkAnalysis() {
     },
     {
       label: 'Status',
-      value: linkViable ? (
-        <span className="flex items-center gap-1 text-[13px] font-medium" style={{ color: '#3ecf8e' }}>
-          <CheckCircle2 size={13} /> Viable
-        </span>
-      ) : (
-        <span className="flex items-center gap-1 text-[13px] font-medium" style={{ color: '#ef4444' }}>
-          <XCircle size={13} /> No link
-        </span>
-      ),
+      value: statusCell,
     },
     {
       label: 'Path Loss',
@@ -197,6 +230,17 @@ export default function LinkAnalysis() {
           </div>
         ))}
       </div>
+
+      {marginalWarnings.length > 0 && (
+        <div className="rounded-md border border-warning/30 bg-warning/10 p-2.5 flex flex-col gap-1.5">
+          {marginalWarnings.map((msg) => (
+            <div key={msg} className="flex items-start gap-1.5 text-warning">
+              <TriangleAlert size={12} className="mt-px shrink-0" />
+              <span className="text-xs font-mono leading-snug">{msg}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,17 @@
 
 import { fsplDb, diffractionLossDb } from './propagation';
 
+export type LinkStatus = 'viable' | 'marginal' | 'not_viable';
+
+/** Minimum headroom above the fade-margin threshold before a link is considered marginal. */
+export const MARGINAL_MARGIN_FLOOR_DB = 10;
+
+/** Fresnel clearance floor: obstruction deeper than this triggers marginal status. */
+export const MARGINAL_FRESNEL_FLOOR_M = -10;
+
+/** Path distance beyond which reliable delivery becomes uncertain for typical LoRa presets. */
+export const MARGINAL_DISTANCE_FLOOR_KM = 35;
+
 export interface LinkBudgetResult {
   txPowerDbm: number;
   txAntennaGainDbi: number;
@@ -20,6 +31,8 @@ export interface LinkBudgetResult {
   fadeMarginDb: number;
   /** True when marginDb > fadeMarginDb */
   linkViable: boolean;
+  /** Three-tier link quality classification */
+  linkStatus: LinkStatus;
   /** Theoretical maximum range in free space (km) */
   maxRangeKm: number;
 }
@@ -65,6 +78,19 @@ export function calculateLinkBudget(
   const fsplBudgetDb = txPowerDbm + txAntennaGainDbi + rxAntennaGainDbi - rxSensitivityDbm - fadeMarginDb;
   const maxRangeKm = Math.pow(10, (fsplBudgetDb - 20 * Math.log10(frequencyMhz) - 32.44) / 20);
 
+  const linkViable = marginDb > fadeMarginDb;
+
+  let linkStatus: LinkStatus;
+  if (!linkViable) {
+    linkStatus = 'not_viable';
+  } else {
+    const thinMargin = marginDb < fadeMarginDb + MARGINAL_MARGIN_FLOOR_DB;
+    const poorFresnel =
+      fresnelClearanceM !== undefined && fresnelClearanceM < MARGINAL_FRESNEL_FLOOR_M;
+    const longPath = distanceKm > MARGINAL_DISTANCE_FLOOR_KM;
+    linkStatus = thinMargin || poorFresnel || longPath ? 'marginal' : 'viable';
+  }
+
   return {
     txPowerDbm,
     txAntennaGainDbi,
@@ -75,7 +101,8 @@ export function calculateLinkBudget(
     rxSensitivityDbm,
     marginDb,
     fadeMarginDb,
-    linkViable: marginDb > fadeMarginDb,
+    linkViable,
+    linkStatus,
     maxRangeKm,
   };
 }
