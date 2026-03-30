@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/Ranfty/meshsight/compare/v0.2.0...v0.2.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* Correct favicon and icon paths ([38289af](https://github.com/Ranfty/meshsight/commit/38289afdc3ca71e8cd3500b5ea36090ff2238ae2))
+
 # [0.2.0](https://github.com/Ranfty/meshsight/compare/v0.1.1...v0.2.0) (2026-03-30)
 
 
