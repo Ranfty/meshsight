@@ -1,3 +1,15 @@
+# [0.2.0](https://github.com/Ranfty/meshsight/compare/v0.1.1...v0.2.0) (2026-03-30)
+
+
+### Bug Fixes
+
+* apply min height to sidebar ([2ed8a71](https://github.com/Ranfty/meshsight/commit/2ed8a71a698dca4329b1edb3bb1e38b1b4a5c778))
+
+
+### Features
+
+* favicon and header icon ([4577708](https://github.com/Ranfty/meshsight/commit/4577708f1801a40e7089b0515993cbf428c691f8))
+
 ## [0.1.1](https://github.com/Ranfty/meshsight/compare/v0.1.0...v0.1.1) (2026-03-30)
 
 
