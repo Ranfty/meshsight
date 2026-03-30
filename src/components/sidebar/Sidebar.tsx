@@ -126,7 +126,7 @@ function SidebarContent() {
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1 mt-3">
+        <ScrollArea className="flex-1 min-h-0 mt-3">
           <TabsContent
             value="nodes"
             className="px-4 pb-4 mt-0 flex flex-col gap-3"
