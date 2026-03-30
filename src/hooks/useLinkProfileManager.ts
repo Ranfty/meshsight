@@ -13,12 +13,18 @@ export function useLinkProfileManager() {
   const loraConfig = useStore((s) => s.loraConfig);
 
   const prevFingerprintRef = useRef<string | null>(null);
+  const prevEndpointsRef = useRef<string | null>(null);
+  const autoNavigateRef = useRef(false);
 
   const { calculateProfile } = useCoverageWorker({
     onProfileResult: (result) => {
       useStore.getState().setLinkProfile(result);
       useStore.getState().setLinkProfileCalculating(false);
-      useStore.getState().setActiveTab('link');
+      // Only auto-navigate to the link tab when new endpoints were selected
+      if (autoNavigateRef.current) {
+        useStore.getState().setActiveTab('link');
+        autoNavigateRef.current = false;
+      }
     },
     onError: (_id, message) => {
       console.error('[LinkProfile]', message);
@@ -31,12 +37,17 @@ export function useLinkProfileManager() {
 
     if (!txId || !rxId) {
       prevFingerprintRef.current = null;
+      prevEndpointsRef.current = null;
       return;
     }
 
     const txNode = nodes.find((n) => n.id === txId);
     const rxNode = nodes.find((n) => n.id === rxId);
     if (!txNode || !rxNode) return;
+
+    const endpointKey = `${txId},${rxId}`;
+    const endpointsChanged = endpointKey !== prevEndpointsRef.current;
+    prevEndpointsRef.current = endpointKey;
 
     const fp = [
       txNode.lat.toFixed(6),
@@ -51,6 +62,10 @@ export function useLinkProfileManager() {
 
     if (fp === prevFingerprintRef.current) return;
     prevFingerprintRef.current = fp;
+
+    if (endpointsChanged) {
+      autoNavigateRef.current = true;
+    }
 
     useStore.getState().setLinkProfileCalculating(true);
     calculateProfile(
