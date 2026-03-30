@@ -48,12 +48,15 @@ function SidebarContent() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-bold text-foreground">MeshSight</h1>
-          <p className="text-[13px] text-muted-foreground mt-0.5">
-            RF Coverage Planner
-          </p>
+      <div className="px-4 pt-3 pb-3 flex items-center justify-between gap-2">
+        <div className="flex flex-row gap-2">
+          <img src="/icon.svg" className="h-8 w-8" alt="MeshSight" />
+          <div>
+            <h1 className="font-bold text-lg leading-tight">MeshSight</h1>
+            <p className="text-xs text-muted-foreground font-mono tracking-wider">
+              LoRa Coverage Planner
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
