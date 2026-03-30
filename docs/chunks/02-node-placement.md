@@ -1,6 +1,6 @@
 # Chunk 02 — Node Placement + Management
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium
 > **Depends on:** Chunk 01
 > **Estimated time:** ~3 hours
@@ -32,12 +32,14 @@ See docs/ARCHITECTURE.md for the MeshNode interface and NodeEditor fields table.
 Follow the DivIcon marker pattern in docs/LEAFLET_PATTERNS.md exactly — especially `className: ''`, `useMemo` for the icon, and `useMemo` for eventHandlers.
 
 **Place mode UX:**
+
 - Toggle button shows Crosshair icon, highlights green when active
 - Map cursor changes to crosshair when place mode is active (CSS on the map container)
 - Clicking the map in place mode creates a node and immediately exits place mode
 - Clicking the map when NOT in place mode does normal map interaction
 
 **NodeEditor layout:**
+
 - Node name: shadcn Input
 - Antenna height: shadcn Slider (0–100m, step 1) with numeric display
 - TX power: shadcn Select (14, 17, 20, 22, 27, 30 dBm)

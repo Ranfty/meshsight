@@ -1,6 +1,6 @@
 # Chunk 06 — Coverage Calculation Web Worker
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Opus · **Effort:** High
 > **Depends on:** Chunks 03, 04, 05
 > **Estimated time:** ~4 hours

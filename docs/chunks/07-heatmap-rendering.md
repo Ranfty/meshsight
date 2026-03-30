@@ -1,6 +1,6 @@
 # Chunk 07 — Coverage Heatmap Rendering
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium
 > **Depends on:** Chunks 02, 06
 > **Estimated time:** ~3 hours
@@ -26,6 +26,7 @@ Render the CoverageResult as a semi-transparent coloured overlay on the Leaflet 
 Follow the ImageOverlay pattern in docs/LEAFLET_PATTERNS.md exactly — especially the offscreen canvas approach and the custom pane for layer ordering.
 
 **Colour mapping:**
+
 ```
 Signal above rxSensitivity + 40 dB → node colour, alpha 0.55 (excellent)
 Signal at rxSensitivity + 20 dB    → node colour, alpha 0.35 (good)
@@ -36,6 +37,7 @@ Signal below rxSensitivity          → transparent (no coverage)
 The alpha ramps linearly between these breakpoints.
 
 **Legend:**
+
 - Position: bottom-left corner, floating over the map
 - Background: `var(--map-overlay-bg)` with `backdrop-blur-sm`
 - Shows 4 colour swatches: Excellent, Good, Fair, Edge
@@ -43,16 +45,19 @@ The alpha ramps linearly between these breakpoints.
 - Labels in JetBrains Mono 11px
 
 **Progress indicator:**
+
 - While Worker is calculating, the node marker pulses (`animate-pulse`)
 - A small percentage text appears below the marker (e.g. "42%")
 - On completion, pulse stops and coverage fades in over 300ms
 
 **Recalculation triggers:**
+
 - Node dragged to new position (debounce 500ms after dragend)
 - Node antenna height, TX power, or antenna gain changed (debounce 300ms)
 - LoRa config preset or region changed (recalculate ALL nodes)
 
 **Layer visibility:**
+
 - Add an eye/eye-off toggle icon to each node card in NodeList
 - Store visibility state per node in Zustand
 - Hidden layers are not rendered but their CoverageResult is kept in memory

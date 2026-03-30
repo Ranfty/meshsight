@@ -1,6 +1,6 @@
 # Chunk 03 — SRTM Tile Fetcher + Parser
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium (high if CORS issues)
 > **Depends on:** Chunk 01
 > **Estimated time:** ~3 hours
@@ -26,17 +26,28 @@ Given a lat/lng, fetch the correct Terrarium elevation tile, decode it, cache it
 ## Specifications
 
 **Terrarium tile URL:**
+
 ```
 https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
 ```
 
 **Tile coordinate conversion (lat/lng → z/x/y):**
+
 ```typescript
-function latLngToTile(lat: number, lng: number, zoom: number): { x: number; y: number } {
-  const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom));
+function latLngToTile(
+  lat: number,
+  lng: number,
+  zoom: number,
+): { x: number; y: number } {
+  const x = Math.floor(((lng + 180) / 360) * Math.pow(2, zoom));
   const y = Math.floor(
-    (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI)
-    / 2 * Math.pow(2, zoom)
+    ((1 -
+      Math.log(
+        Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180),
+      ) /
+        Math.PI) /
+      2) *
+      Math.pow(2, zoom),
   );
   return { x, y };
 }
@@ -51,6 +62,7 @@ function latLngToTile(lat: number, lng: number, zoom: number): { x: number; y: n
 **IndexedDB caching:** use idb-keyval with key format `terrarium-{z}-{x}-{y}`. Store the decoded Float32Array (not the raw PNG). This avoids re-decoding on cache hits.
 
 **Error handling:**
+
 - Network failure → throw with descriptive message
 - Tile not available (404) → return NaN for that area (ocean, polar regions)
 - SRTM void values → if decoded elevation is < -500 (clearly invalid), treat as void
@@ -60,22 +72,47 @@ function latLngToTile(lat: number, lng: number, zoom: number): { x: number; y: n
 ```typescript
 // src/engine/srtm.ts
 class ElevationProvider {
-  async prefetchArea(bounds: LatLngBounds): Promise<void>
-  async getElevation(lat: number, lng: number): Promise<number>
+  async prefetchArea(bounds: LatLngBounds): Promise<void>;
+  async getElevation(lat: number, lng: number): Promise<number>;
   async getProfile(
     from: { lat: number; lng: number },
     to: { lat: number; lng: number },
-    samples: number
-  ): Promise<{ distanceM: number; elevationM: number; lat: number; lng: number }[]>
-  async isCached(bounds: LatLngBounds): Promise<boolean>
+    samples: number,
+  ): Promise<
+    { distanceM: number; elevationM: number; lat: number; lng: number }[]
+  >;
+  async isCached(bounds: LatLngBounds): Promise<boolean>;
 }
 
 // src/engine/geo.ts
-function haversineDistanceM(lat1: number, lng1: number, lat2: number, lng2: number): number
-function initialBearingDeg(lat1: number, lng1: number, lat2: number, lng2: number): number
-function destinationPoint(lat: number, lng: number, bearingDeg: number, distanceM: number): { lat: number; lng: number }
-function latLngToTile(lat: number, lng: number, zoom: number): { x: number; y: number }
-function tileToLatLng(x: number, y: number, zoom: number): { lat: number; lng: number }
+function haversineDistanceM(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number;
+function initialBearingDeg(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number;
+function destinationPoint(
+  lat: number,
+  lng: number,
+  bearingDeg: number,
+  distanceM: number,
+): { lat: number; lng: number };
+function latLngToTile(
+  lat: number,
+  lng: number,
+  zoom: number,
+): { x: number; y: number };
+function tileToLatLng(
+  x: number,
+  y: number,
+  zoom: number,
+): { lat: number; lng: number };
 ```
 
 ## Prompt

@@ -1,6 +1,6 @@
 # Chunk 05 — LoRa Link Budget + Presets
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Sonnet · **Effort:** Medium
 > **Depends on:** Nothing (can be done in parallel with chunks 03/04)
 > **Estimated time:** ~2 hours
@@ -31,11 +31,13 @@ Link works if: received power > RX sensitivity + fade margin
 // src/engine/propagation.ts
 
 /** Free-space path loss in dB */
-function fsplDb(distanceKm: number, frequencyMhz: number): number
+function fsplDb(distanceKm: number, frequencyMhz: number): number;
 
 /** Knife-edge diffraction loss (Fresnel-Kirchhoff) */
-function diffractionLossDb(fresnelClearanceM: number, fresnelRadiusM: number): number
-
+function diffractionLossDb(
+  fresnelClearanceM: number,
+  fresnelRadiusM: number,
+): number;
 
 // src/engine/linkbudget.ts
 
@@ -47,10 +49,10 @@ interface LinkBudgetResult {
   diffractionLossDb: number;
   receivedPowerDbm: number;
   rxSensitivityDbm: number;
-  marginDb: number;              // received - sensitivity
-  fadeMarginDb: number;          // configurable, default 10
-  linkViable: boolean;           // margin > fadeMargin
-  maxRangeKm: number;            // theoretical max in free space
+  marginDb: number; // received - sensitivity
+  fadeMarginDb: number; // configurable, default 10
+  linkViable: boolean; // margin > fadeMargin
+  maxRangeKm: number; // theoretical max in free space
 }
 
 function calculateLinkBudget(
@@ -60,32 +62,31 @@ function calculateLinkBudget(
   txAntennaGainDbi: number,
   rxAntennaGainDbi: number,
   rxSensitivityDbm: number,
-  fadeMarginDb?: number,         // default 10
-  fresnelClearanceM?: number,    // if provided, adds diffraction loss
+  fadeMarginDb?: number, // default 10
+  fresnelClearanceM?: number, // if provided, adds diffraction loss
   fresnelRadiusM?: number,
-): LinkBudgetResult
-
+): LinkBudgetResult;
 
 // src/data/loraPresets.ts
 
 interface LoRaPreset {
-  name: string;                  // 'LONG_FAST'
-  label: string;                 // 'Long Fast'
+  name: string; // 'LONG_FAST'
+  label: string; // 'Long Fast'
   bandwidthKhz: number;
   spreadingFactor: number;
-  codingRate: number;            // 5 = 4/5, 8 = 4/8
+  codingRate: number; // 5 = 4/5, 8 = 4/8
   rxSensitivityDbm: number;
 }
 
 interface RegionConfig {
-  name: string;                  // 'EU_868'
-  label: string;                 // 'Europe 868 MHz'
+  name: string; // 'EU_868'
+  label: string; // 'Europe 868 MHz'
   frequencyMhz: number;
   maxTxPowerDbm: number;
 }
 
-const LORA_PRESETS: LoRaPreset[]
-const REGION_CONFIGS: RegionConfig[]
+const LORA_PRESETS: LoRaPreset[];
+const REGION_CONFIGS: RegionConfig[];
 ```
 
 ## Prompt

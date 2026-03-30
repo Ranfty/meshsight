@@ -1,6 +1,6 @@
 # Chunk 04 — Line-of-Sight Engine
 
-> **Status:** Not started
+> **Status:** Complete
 > **Model:** Opus · **Effort:** High
 > **Depends on:** Chunk 03
 > **Estimated time:** ~3 hours
@@ -28,17 +28,20 @@ This chunk involves multi-step physics: earth curvature correction, Fresnel zone
 The LOS check walks along the elevation profile between TX and RX, checking whether any terrain point intersects the radio path.
 
 **Step 1: Establish the straight-line path.**
+
 - TX antenna tip: `elevationTx + antennaHeightTx`
 - RX antenna tip: `elevationRx + antennaHeightRx`
 - At any fraction `t` along the path: `losHeight(t) = txTip + t * (rxTip - txTip)`
 
 **Step 2: Apply earth curvature correction.**
+
 - At distance `d` from TX, the earth curves away from the straight line
 - Correction: `curveM = d² / (2 × EFFECTIVE_EARTH_RADIUS)`
 - Where `EFFECTIVE_EARTH_RADIUS = EARTH_RADIUS × (4/3) = 8,494,667 m`
 - This correction is SUBTRACTED from the LOS line height (or equivalently, ADDED to the terrain height)
 
 **Step 3: Calculate Fresnel zone radius.**
+
 - At distance `d` from TX (total path length `D`):
 - `F1 = sqrt(λ × d × (D - d) / D)`
 - Where `λ = c / frequency` (wavelength in metres)
@@ -46,6 +49,7 @@ The LOS check walks along the elevation profile between TX and RX, checking whet
 - The Fresnel zone is widest at the midpoint
 
 **Step 4: Check clearance.**
+
 - At each profile point, the clearance is:
 - `clearance = (losHeight - curvatureCorrection) - terrainElevation`
 - LOS is clear if `clearance ≥ 0.6 × F1` at ALL points
@@ -56,19 +60,19 @@ The LOS check walks along the elevation profile between TX and RX, checking whet
 // src/engine/los.ts
 
 interface LOSResult {
-  isLos: boolean;                // 60%+ Fresnel zone clear at all points?
-  clearanceMinM: number;         // minimum clearance in metres (negative = blocked)
-  obstructionDistanceM: number;  // distance from TX to worst obstruction point
-  fresnelClearances: number[];   // clearance at each profile sample (metres)
-  fresnelRadii: number[];        // F1 radius at each point (metres)
+  isLos: boolean; // 60%+ Fresnel zone clear at all points?
+  clearanceMinM: number; // minimum clearance in metres (negative = blocked)
+  obstructionDistanceM: number; // distance from TX to worst obstruction point
+  fresnelClearances: number[]; // clearance at each profile sample (metres)
+  fresnelRadii: number[]; // F1 radius at each point (metres)
 }
 
 function checkLOS(
   profile: { distanceM: number; elevationM: number }[],
-  txHeightM: number,             // antenna height AGL at TX
-  rxHeightM: number,             // antenna height AGL at RX
-  frequencyMhz: number
-): LOSResult
+  txHeightM: number, // antenna height AGL at TX
+  rxHeightM: number, // antenna height AGL at RX
+  frequencyMhz: number,
+): LOSResult;
 ```
 
 ## Constants
