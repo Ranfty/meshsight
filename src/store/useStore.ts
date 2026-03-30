@@ -7,6 +7,7 @@ interface AppState {
   nextNodeIndex: number;           // monotonically incrementing — survives deletions
   selectedNodeId: string | null;
   loraConfig: LoRaConfig;
+  coverageRadiusKm: number;
   mapCenter: { lat: number; lng: number };
   mapZoom: number;
   sidebarOpen: boolean;
@@ -31,6 +32,7 @@ interface AppActions {
   removeNode: (id: string) => void;
   selectNode: (id: string | null) => void;
   setLoraConfig: (config: Partial<LoRaConfig>) => void;
+  setCoverageRadiusKm: (km: number) => void;
   setMapCenter: (center: { lat: number; lng: number }) => void;
   setMapZoom: (zoom: number) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -62,6 +64,7 @@ const initialState: AppState = {
     rxSensitivityDbm: -123,
     preset: 'LONG_FAST',
   },
+  coverageRadiusKm: 5,
   mapCenter: { lat: 52.5, lng: -1.5 },
   mapZoom: 7,
   sidebarOpen: true,
@@ -120,6 +123,8 @@ export const useStore = create<Store>()(
 
       setLoraConfig: (config) =>
         set((state) => ({ loraConfig: { ...state.loraConfig, ...config } })),
+
+      setCoverageRadiusKm: (km) => set({ coverageRadiusKm: km }),
 
       setMapCenter: (center) => set({ mapCenter: center }),
 
@@ -194,6 +199,7 @@ export const useStore = create<Store>()(
         nodes: state.nodes,
         nextNodeIndex: state.nextNodeIndex,
         loraConfig: state.loraConfig,
+        coverageRadiusKm: state.coverageRadiusKm,
         mapCenter: state.mapCenter,
         mapZoom: state.mapZoom,
         sidebarOpen: state.sidebarOpen,

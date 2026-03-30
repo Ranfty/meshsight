@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 import { useStore } from '@/store/useStore';
 import { LORA_PRESETS, REGION_CONFIGS } from '@/data/loraPresets';
 
@@ -16,6 +17,8 @@ function formatCodingRate(cr: number): string {
 export default function LoRaConfigPanel() {
   const loraConfig = useStore((s) => s.loraConfig);
   const setLoraConfig = useStore((s) => s.setLoraConfig);
+  const coverageRadiusKm = useStore((s) => s.coverageRadiusKm);
+  const setCoverageRadiusKm = useStore((s) => s.setCoverageRadiusKm);
 
   const currentRegion =
     REGION_CONFIGS.find((r) => r.frequencyMhz === loraConfig.frequencyMhz) ??
@@ -75,6 +78,30 @@ export default function LoRaConfigPanel() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <p className="text-sm font-bold text-foreground mb-3">Coverage</p>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[13px] text-muted-foreground">Calculation Radius</label>
+            <span className="font-mono text-[13px] font-medium text-foreground">
+              {coverageRadiusKm} km
+            </span>
+          </div>
+          <Slider
+            min={1}
+            max={30}
+            step={1}
+            value={[coverageRadiusKm]}
+            onValueChange={([value]) => setCoverageRadiusKm(value)}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Larger radii increase calculation time
+          </p>
         </div>
       </div>
 
